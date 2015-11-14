@@ -12,6 +12,7 @@
 #endif
 
 #include <stdlib.h>
+#include <iostream>
 
 const int ROWS = 12;
 const int COLUMNS = 15;
@@ -43,6 +44,8 @@ void initGrid(){
 }
 
 void initRendering() {
+	glMatrixMode (GL_PROJECTION);
+	gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
@@ -76,10 +79,7 @@ void displayQuad(int i, int j) {
 }
 
 void displayGrid() {
-	// glClear (GL_COLOR_BUFFER_BIT);
-	glLoadIdentity();
-	glMatrixMode (GL_PROJECTION);
-	gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
+	glClear (GL_COLOR_BUFFER_BIT);
 
 	for(int i = 0; i < ROWS; i++)
 		for(int j = 0; j < COLUMNS; j++) {
@@ -107,15 +107,28 @@ state: GLUT_UP, GLUT_DOWN
 x, y: mouse coordinates
 */
 void swapTiles(GLint button, GLint state, GLint x, GLint y) {
-	//
+	std::cout << "x:" << x << "y: %d" << y;
+	// if(firstClick) {
+
+	// } else
+	// {
+
+	// }
 }
 
 void resize(int width, int height) {
-    // Keep the window size constast
-    glutReshapeWindow(winWidth, winHeight);
+	/*  Reset viewport and projection parameters  */
+	glViewport (0, 0, newWidth, newHeight);
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
+
+	/*  Reset display-window size parameters.  */
+	winWidth  = newWidth;
+	winHeight = newHeight;
 }
 
-int main(int argc,char** argv) {]
+int main(int argc,char** argv) {
 	initGrid();
 	firstClick = true;
 
