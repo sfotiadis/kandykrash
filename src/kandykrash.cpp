@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-const int ROWS = 12;
-const int COLUMNS = 15;
+const int ROWS = 2;
+const int COLUMNS = 4;
 const int TILESIZE = 40;
 const int PADDING = 0;
 const int STATUSLINE = 40;
@@ -44,7 +44,7 @@ int firstTile[2], secondTile[2];
 
 void printGrid(){
 	printf("\n");
-	for(int i = ROWS - 1; i >= 0 ; i--) {
+	for(int i = ROWS - 1 ; i >= 0 ; i--) {
 		for(int j = 0; j < COLUMNS; j++) {
 			printf("%d\t",grid[i][j]);
 		}
@@ -57,7 +57,7 @@ void printGrid(){
 void initGrid(){
 	for(int i = 0; i < ROWS; i++)
 		for(int j = 0; j < COLUMNS; j++)
-			grid[i][j] = (i + j) % 5 + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
+			grid[i][j] = (i + j) % 3 + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
 }
 
 void initRendering() {
@@ -127,29 +127,29 @@ state: GLUT_UP, GLUT_DOWN
 x, y: mouse coordinates
 */
 void swapTiles(GLint button, GLint state, GLint x, GLint y) {
-	printf("\nmouse ");
+	// printf("\nmouse ");
 
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		if (firstClick) {
-			printf("firstClick\n");
-			firstTile[0] = x / TILESIZE;
-			firstTile[1] = (winHeight - y) / TILESIZE;
+			// printf("firstClick\n");
+			firstTile[0] = (winHeight - y) / TILESIZE;
+			firstTile[1] = x / TILESIZE;
 
 			firstClick = false;
 			// printf("%d %d\n", x, y);
-			printf("%d %d", firstTile[0], firstTile[1]);
+			printf("Tile %d %d - Color %d\n", firstTile[0], firstTile[1], grid[firstTile[0]][firstTile[1]]);
 		} else {
-			printf("secondClick\n");
-			secondTile[0] = x / TILESIZE;
-			secondTile[1] = (winHeight - y) / TILESIZE;
+			// printf("secondClick\n");
+			secondTile[0] = (winHeight - y) / TILESIZE;
+			secondTile[1] = x / TILESIZE;
 
 			//TODO check if neighbors
 			int buf = grid[firstTile[0]][firstTile[1]];
 			grid[firstTile[0]][firstTile[1]] = grid[secondTile[0]][secondTile[1]];
-			grid[secondTile[0]][secondTile[1]] = grid[firstTile[0]][firstTile[1]];
+			grid[secondTile[0]][secondTile[1]] = buf;
 
 			firstClick = true;
-			printf("%d %d", secondTile[0], secondTile[1]);
+			printf("Tile %d %d - Color %d\n", secondTile[0], secondTile[1], grid[secondTile[0]][secondTile[1]]);
 
 			printGrid();
 		}
