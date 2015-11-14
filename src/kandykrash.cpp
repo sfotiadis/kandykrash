@@ -12,7 +12,7 @@
 #endif
 
 #include <stdlib.h>
-#include <iostream>
+#include <stdio.h>
 
 const int ROWS = 12;
 const int COLUMNS = 15;
@@ -21,6 +21,7 @@ const int PADDING = 0;
 const int STATUSLINE = 40;
 
 // Types of tiles
+const int WHITE = 0;
 const int BLUE = 1;
 const int RED = 2;
 const int ROCK = 3;
@@ -35,12 +36,28 @@ GLsizei winHeight = ROWS * TILESIZE + (ROWS + 1) * PADDING + STATUSLINE;
 // State variables
 int grid[ROWS][COLUMNS];
 bool firstClick;
+// The coordinates of the tiles to be swapped
+int firstTile[2], secondTile[2];
+
+
+// DEBUGGING TOOLS
+
+void printGrid(){
+	printf("\n");
+	for(int i = ROWS - 1; i >= 0 ; i--) {
+		for(int j = 0; j < COLUMNS; j++) {
+			printf("%d\t",grid[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
 
 // Randonly initialize the grid
 void initGrid(){
 	for(int i = 0; i < ROWS; i++)
 		for(int j = 0; j < COLUMNS; j++)
-			grid[i][j] = BLUE + (rand() % (int)(PAPER - BLUE + 1));
+			grid[i][j] = (i + j) % 5 + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
 }
 
 void initRendering() {
@@ -51,6 +68,9 @@ void initRendering() {
 
 void setColorFromType(int type) {
 	switch(type) {
+		case WHITE:
+			glColor3f(1,1,1);
+			break;
 		case BLUE:
 			glColor3f(0,0,1);
 			break;
@@ -107,16 +127,36 @@ state: GLUT_UP, GLUT_DOWN
 x, y: mouse coordinates
 */
 void swapTiles(GLint button, GLint state, GLint x, GLint y) {
-	std::cout << "x:" << x << "y: %d" << y;
-	// if(firstClick) {
+	printf("\nmouse ");
 
-	// } else
-	// {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		if (firstClick) {
+			printf("firstClick\n");
+			firstTile[0] = x / TILESIZE;
+			firstTile[1] = (winHeight - y) / TILESIZE;
 
-	// }
+			firstClick = false;
+			// printf("%d %d\n", x, y);
+			printf("%d %d", firstTile[0], firstTile[1]);
+		} else {
+			printf("secondClick\n");
+			secondTile[0] = x / TILESIZE;
+			secondTile[1] = (winHeight - y) / TILESIZE;
+
+			//TODO check if neighbors
+			int buf = grid[firstTile[0]][firstTile[1]];
+			grid[firstTile[0]][firstTile[1]] = grid[secondTile[0]][secondTile[1]];
+			grid[secondTile[0]][secondTile[1]] = grid[firstTile[0]][firstTile[1]];
+
+			firstClick = true;
+			printf("%d %d", secondTile[0], secondTile[1]);
+
+			printGrid();
+		}
+	}
 }
 
-void resize(int width, int height) {
+void resize(int newWidth, int newHeight) {
 	/*  Reset viewport and projection parameters  */
 	glViewport (0, 0, newWidth, newHeight);
 	glMatrixMode (GL_PROJECTION);
@@ -126,6 +166,14 @@ void resize(int width, int height) {
 	/*  Reset display-window size parameters.  */
 	winWidth  = newWidth;
 	winHeight = newHeight;
+}
+
+void keyboard(GLubyte curvePlotKey, GLint xMouse, GLint yMouse)
+{
+	GLint x = xMouse;
+	printf("xMouse = %d\n", x);
+	GLint y = winHeight - yMouse;
+	printf("yMouse = %d\n", y);
 }
 
 int main(int argc,char** argv) {
@@ -143,6 +191,7 @@ int main(int argc,char** argv) {
    	glutDisplayFunc(display);
    	glutReshapeFunc(resize);
 	glutMouseFunc(swapTiles);
+	glutKeyboardFunc (keyboard);
 
 	glutMainLoop();
 	return 0;
