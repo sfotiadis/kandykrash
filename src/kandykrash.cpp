@@ -148,7 +148,7 @@ void swapTiles(GLint x, GLint y) {
 }
 
 
-void mouseFunc(GLint button, GLint state, GLint x, GLint y) {
+void mouse(GLint button, GLint state, GLint x, GLint y) {
 
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		swapTiles(x, y);
@@ -194,7 +194,7 @@ int main(int argc,char** argv) {
 
    	glutDisplayFunc(display);
    	glutReshapeFunc(resize);
-	glutMouseFunc(mouseFunc);
+	glutMouseFunc(mouse);
 	glutKeyboardFunc (keyboard);
 
 	glutMainLoop();
