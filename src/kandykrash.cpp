@@ -38,166 +38,216 @@ int grid[ROWS][COLUMNS];
 bool firstClick;
 // The coordinates of the tiles to be swapped
 int firstTile[2], secondTile[2];
-
+// Triad to be deleted
+int triad[3][2];
 
 // DEBUGGING TOOLS
 
 void printGrid(){
-	printf("\n");
-	for(int i = ROWS - 1 ; i >= 0 ; i--) {
-		for(int j = 0; j < COLUMNS; j++) {
-			printf("%d\t",grid[i][j]);
-		}
-		printf("\n");
-	}
-	printf("\n");
+    printf("\n");
+    for(int i = ROWS - 1 ; i >= 0 ; i--) {
+        for(int j = 0; j < COLUMNS; j++) {
+            printf("%d\t",grid[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
 
 // Randonly initialize the grid
 void initGrid(){
-	for(int i = 0; i < ROWS; i++)
-		for(int j = 0; j < COLUMNS; j++)
-			grid[i][j] = (i + j) % 3 + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
+    for(int i = 0; i < ROWS; i++)
+        for(int j = 0; j < COLUMNS; j++)
+            grid[i][j] = (i + j) % 3 + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
 }
 
 void initRendering() {
-	glMatrixMode (GL_PROJECTION);
-	gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glMatrixMode (GL_PROJECTION);
+    gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 void setColorFromType(int type) {
-	switch(type) {
-		case WHITE:
-			glColor3f(1,1,1);
-			break;
-		case BLUE:
-			glColor3f(0,0,1);
-			break;
-		case RED:
-			glColor3f(1,0,0);
-			break;
-		case ROCK:
-			glColor3f(0,1,0);
-			break;
-		case SCISSORS:
-			glColor3f(1,1,0);
-			break;
-		case PAPER:
-			glColor3f(1,0,1);
-			break;
-	}
+    switch(type) {
+        case WHITE:
+            glColor3f(1,1,1);
+            break;
+        case BLUE:
+            glColor3f(0,0,1);
+            break;
+        case RED:
+            glColor3f(1,0,0);
+            break;
+        case ROCK:
+            glColor3f(0,1,0);
+            break;
+        case SCISSORS:
+            glColor3f(1,1,0);
+            break;
+        case PAPER:
+            glColor3f(1,0,1);
+            break;
+    }
 }
 
 void displayQuad(int i, int j) {
-	glBegin(GL_QUADS);
-		glVertex2f(i, j);
-		glVertex2f(i+1, j);
-		glVertex2f(i+1, j+1);
-		glVertex2f(i, j+1);
-	glEnd();
+    glBegin(GL_QUADS);
+        glVertex2f(i, j);
+        glVertex2f(i+1, j);
+        glVertex2f(i+1, j+1);
+        glVertex2f(i, j+1);
+    glEnd();
 }
 
 void displayGrid() {
-	glClear (GL_COLOR_BUFFER_BIT);
+    glClear (GL_COLOR_BUFFER_BIT);
 
-	for(int i = 0; i < ROWS; i++)
-		for(int j = 0; j < COLUMNS; j++) {
-			setColorFromType(grid[i][j]);
-			displayQuad(j, i);
-		}
+    for(int i = 0; i < ROWS; i++)
+        for(int j = 0; j < COLUMNS; j++) {
+            setColorFromType(grid[i][j]);
+            displayQuad(j, i);
+        }
 }
 
 void display() {
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW); //Switch to the drawing perspective
-	glLoadIdentity(); //Reset the drawing perspective
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW); //Switch to the drawing perspective
+    glLoadIdentity(); //Reset the drawing perspective
 
-	displayGrid();
-	//displayStatus();
-	glutSwapBuffers();
-	// glFlush();
+    displayGrid();
+    //displayStatus();
+    glFlush();
 }
 
 
-void swapTiles(GLint x, GLint y) {
-	if (firstClick) {
-		// printf("firstClick\n");
-		firstTile[0] = (winHeight - y) / TILESIZE;
-		firstTile[1] = x / TILESIZE;
+// Returns true after the second click
+bool swapTiles(GLint x, GLint y) {
+    if (firstClick) {
+        // printf("firstClick\n");
+        firstTile[0] = (winHeight - y) / TILESIZE;
+        firstTile[1] = x / TILESIZE;
 
-		firstClick = false;
-		// printf("%d %d\n", x, y);
-		printf("Tile %d %d - Color %d\n", firstTile[0], firstTile[1], grid[firstTile[0]][firstTile[1]]);
-	} else {
-		// printf("secondClick\n");
-		secondTile[0] = (winHeight - y) / TILESIZE;
-		secondTile[1] = x / TILESIZE;
+        firstClick = false;
+        // printf("%d %d\n", x, y);
+        printf("Tile %d %d - Color %d\n", firstTile[0], firstTile[1], grid[firstTile[0]][firstTile[1]]);
+    } else {
+        // printf("secondClick\n");
+        secondTile[0] = (winHeight - y) / TILESIZE;
+        secondTile[1] = x / TILESIZE;
 
-		//TODO check if neighbors
-		int buf = grid[firstTile[0]][firstTile[1]];
-		grid[firstTile[0]][firstTile[1]] = grid[secondTile[0]][secondTile[1]];
-		grid[secondTile[0]][secondTile[1]] = buf;
+        //TODO check if neighbors
+        int buf = grid[firstTile[0]][firstTile[1]];
+        grid[firstTile[0]][firstTile[1]] = grid[secondTile[0]][secondTile[1]];
+        grid[secondTile[0]][secondTile[1]] = buf;
 
-		firstClick = true;
-		printf("Tile %d %d - Color %d\n", secondTile[0], secondTile[1], grid[secondTile[0]][secondTile[1]]);
+        firstClick = true;
+        printf("Tile %d %d - Color %d\n", secondTile[0], secondTile[1], grid[secondTile[0]][secondTile[1]]);
 
-		printGrid();
-	}
+        printGrid();
+
+        return true;
+    }
 }
 
+// Checkc first rows and then lines for a match-3. "Paints" the triad to be deleted as white.
+bool findTriad() {
+    int c = 0;
+    int v;
+
+    // First look at rows
+    for(int i = 0; i < ROWS ; i++) {
+        v = grid[i][0]; // first column of the row
+        c = 1;
+        for(int j = 1; j < COLUMNS; j++) {
+
+            // if same as previous add to counter
+            if(grid[i][j] == v) {
+                c++;
+            } else { // start again
+                c = 1;
+                v = grid[i][j];
+            }
+
+            // triad found
+            if(c == 3) {
+                triad[0][0] = i; triad[0][1] = j - 2;
+                triad[1][0] = i; triad[1][1] = j - 1;
+                triad[2][0] = i; triad[2][1] = j;
+
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void recolorTriad(int color) {
+    for(int i = 0; i <3; i++) {
+            grid[triad[i][0]][triad[i][1]] = color;
+    }
+    glutPostRedisplay();
+}
 
 void mouse(GLint button, GLint state, GLint x, GLint y) {
 
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-		swapTiles(x, y);
-	}
-
-	displayGrid();
-	glutSwapBuffers();
-	// glFlush();
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        if (swapTiles(x, y)) {
+            if(findTriad()) {
+                // Blink triad effect
+                int oldColor = grid[triad[0][0]][triad[0][1]];
+                recolorTriad(WHITE);
+                glutTimerFunc(250, recolorTriad, oldColor);
+                glutTimerFunc(500, recolorTriad, WHITE);
+                glutTimerFunc(750, recolorTriad, oldColor);
+                glutTimerFunc(1000, recolorTriad, WHITE);
+            }
+            displayGrid();
+            glFlush();
+        }
+    }
 }
 
 
 void resize(int newWidth, int newHeight) {
-	/*  Reset viewport and projection parameters  */
-	glViewport (0, 0, newWidth, newHeight);
-	glMatrixMode (GL_PROJECTION);
-	glLoadIdentity();
-	gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
+    /*  Reset viewport and projection parameters  */
+    glViewport (0, 0, newWidth, newHeight);
+    glMatrixMode (GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
 
-	/*  Reset display-window size parameters.  */
-	winWidth  = newWidth;
-	winHeight = newHeight;
+    /*  Reset display-window size parameters.  */
+    winWidth  = newWidth;
+    winHeight = newHeight;
 }
 
 void keyboard(GLubyte curvePlotKey, GLint xMouse, GLint yMouse)
 {
-	GLint x = xMouse;
-	printf("xMouse = %d\n", x);
-	GLint y = winHeight - yMouse;
-	printf("yMouse = %d\n", y);
+    GLint x = xMouse;
+    printf("xMouse = %d\n", x);
+    GLint y = winHeight - yMouse;
+    printf("yMouse = %d\n", y);
 }
 
 int main(int argc,char** argv) {
-	initGrid();
-	firstClick = true;
+    initGrid();
+    firstClick = true;
 
-	glutInit(&argc, argv);
-	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
-	glutInitWindowPosition (50, 50);
-	glutInitWindowSize (winWidth, winHeight);
-	glutCreateWindow ("Kandy Krash");
+    glutInit(&argc, argv);
+    // glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowPosition (50, 50);
+    glutInitWindowSize (winWidth, winHeight);
+    glutCreateWindow ("Kandy Krash");
 
-	initRendering();
+    initRendering();
 
-   	glutDisplayFunc(display);
-   	glutReshapeFunc(resize);
-	glutMouseFunc(mouse);
-	glutKeyboardFunc (keyboard);
+    glutDisplayFunc(display);
+    glutReshapeFunc(resize);
+    glutMouseFunc(mouse);
+    glutKeyboardFunc (keyboard);
 
-	glutMainLoop();
-	return 0;
+    glutMainLoop();
+    return 0;
 }
 
