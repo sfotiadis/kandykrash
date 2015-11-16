@@ -1,4 +1,4 @@
-// g++  -I/usr/include kandykrash.cpp -L/usr/lib/ -framework OpenGL -framework GLUT -o kandykrash
+// g++  -w -I/usr/include kandykrash.cpp -L/usr/lib/ -framework OpenGL -framework GLUT -o kandykrash
 
 
 #if defined(__APPLE__)
@@ -116,45 +116,49 @@ void display() {
 
 	displayGrid();
 	//displayStatus();
-	glFlush();
+	glutSwapBuffers();
+	// glFlush();
 }
 
-/*
-glutMouseFunc(void (*func)(int button, int state, int x, int y))
-mouse function callback
-button: GLUT_LEFT_BUTTON, GLUT_MIDDLE_BUTTON, GLUT_RIGHT_BUTTON
-state: GLUT_UP, GLUT_DOWN
-x, y: mouse coordinates
-*/
-void swapTiles(GLint button, GLint state, GLint x, GLint y) {
-	// printf("\nmouse ");
 
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-		if (firstClick) {
-			// printf("firstClick\n");
-			firstTile[0] = (winHeight - y) / TILESIZE;
-			firstTile[1] = x / TILESIZE;
+void swapTiles(GLint x, GLint y) {
+	if (firstClick) {
+		// printf("firstClick\n");
+		firstTile[0] = (winHeight - y) / TILESIZE;
+		firstTile[1] = x / TILESIZE;
 
-			firstClick = false;
-			// printf("%d %d\n", x, y);
-			printf("Tile %d %d - Color %d\n", firstTile[0], firstTile[1], grid[firstTile[0]][firstTile[1]]);
-		} else {
-			// printf("secondClick\n");
-			secondTile[0] = (winHeight - y) / TILESIZE;
-			secondTile[1] = x / TILESIZE;
+		firstClick = false;
+		// printf("%d %d\n", x, y);
+		printf("Tile %d %d - Color %d\n", firstTile[0], firstTile[1], grid[firstTile[0]][firstTile[1]]);
+	} else {
+		// printf("secondClick\n");
+		secondTile[0] = (winHeight - y) / TILESIZE;
+		secondTile[1] = x / TILESIZE;
 
-			//TODO check if neighbors
-			int buf = grid[firstTile[0]][firstTile[1]];
-			grid[firstTile[0]][firstTile[1]] = grid[secondTile[0]][secondTile[1]];
-			grid[secondTile[0]][secondTile[1]] = buf;
+		//TODO check if neighbors
+		int buf = grid[firstTile[0]][firstTile[1]];
+		grid[firstTile[0]][firstTile[1]] = grid[secondTile[0]][secondTile[1]];
+		grid[secondTile[0]][secondTile[1]] = buf;
 
-			firstClick = true;
-			printf("Tile %d %d - Color %d\n", secondTile[0], secondTile[1], grid[secondTile[0]][secondTile[1]]);
+		firstClick = true;
+		printf("Tile %d %d - Color %d\n", secondTile[0], secondTile[1], grid[secondTile[0]][secondTile[1]]);
 
-			printGrid();
-		}
+		printGrid();
 	}
 }
+
+
+void mouseFunc(GLint button, GLint state, GLint x, GLint y) {
+
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		swapTiles(x, y);
+	}
+
+	displayGrid();
+	glutSwapBuffers();
+	// glFlush();
+}
+
 
 void resize(int newWidth, int newHeight) {
 	/*  Reset viewport and projection parameters  */
@@ -181,7 +185,7 @@ int main(int argc,char** argv) {
 	firstClick = true;
 
 	glutInit(&argc, argv);
-	// glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
+	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
 	glutInitWindowPosition (50, 50);
 	glutInitWindowSize (winWidth, winHeight);
 	glutCreateWindow ("Kandy Krash");
@@ -190,7 +194,7 @@ int main(int argc,char** argv) {
 
    	glutDisplayFunc(display);
    	glutReshapeFunc(resize);
-	glutMouseFunc(swapTiles);
+	glutMouseFunc(mouseFunc);
 	glutKeyboardFunc (keyboard);
 
 	glutMainLoop();
