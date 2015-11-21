@@ -12,6 +12,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
+
+using namespace std;
 
 const int ROWS = 4;
 const int COLUMNS = 6;
@@ -26,8 +30,8 @@ const int WHITE = 0;
 const int BLUE = 1;
 const int RED = 2;
 const int ROCK = 3; // GREEN
-const int SCISSORS = 4;
-const int PAPER = 5;
+const int PAPER = 4;
+const int SCISSORS = 5;
 
 // KEYS
 const int ESC_KEY = 27;
@@ -52,6 +56,11 @@ struct Tile tile1, tile2;
 // Triad to be deleted
 int triad[3][2];
 
+// Icons
+int ICON_ROCK[TILESIZE][TILESIZE];
+int ICON_PAPER[TILESIZE][TILESIZE];
+int ICON_SCISSORS[TILESIZE][TILESIZE];
+
 // For debugging
 void printGrid(){
     printf("\n");
@@ -62,6 +71,33 @@ void printGrid(){
         printf("\n");
     }
     printf("\n");
+}
+
+
+void readPGM(string filename, int arr[40][40]) {
+    ifstream file(filename);
+
+    if (file.is_open()) {
+        // Ignoring the first three lines
+        string dummyLine;
+        getline(file, dummyLine);
+        getline(file, dummyLine);
+        getline(file, dummyLine);
+
+        for(int i = 0; i < TILESIZE; i++) {
+            for (int j = 0; j < TILESIZE; j++) {
+                file >> arr[i][j];
+                // cout << arr[i][j] << " ";
+            }
+            // cout << "\n";
+         }
+
+    } else {
+        cout << "File: " << filename << " could not be opened";
+        exit(0);
+    }
+
+    file.close();
 }
 
 // Randonly initialize the grid
@@ -299,11 +335,19 @@ void keyboard(GLubyte key, GLint xMouse, GLint yMouse)
 
 }
 
-int main(int argc,char** argv) {
-    initGrid();
+void initState() {
     firstClick = true;
     gameStarted = false;
     newGame = false;
+
+    readPGM("assets/rock.pgm", ICON_ROCK);
+    readPGM("assets/paper.pgm", ICON_PAPER);
+    readPGM("assets/scissors.pgm", ICON_SCISSORS);
+}
+
+int main(int argc,char** argv) {
+    initGrid();
+    initState();
 
     glutInit(&argc, argv);
     // glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
