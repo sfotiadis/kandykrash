@@ -170,7 +170,7 @@ void display() {
         //TODO update score
         //displayStatus();
     }
-    glFlush();
+    glutSwapBuffers();
 }
 
 bool isTileWithinBounds(int row, int col) {
@@ -347,10 +347,11 @@ void initState() {
 
 int main(int argc,char** argv) {
     initGrid();
+    // TODO Check gia pi8anes triades
     initState();
 
     glutInit(&argc, argv);
-    // glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
+    glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowPosition (50, 50);
     glutInitWindowSize (winWidth, winHeight);
     glutCreateWindow ("Kandy Krash");
