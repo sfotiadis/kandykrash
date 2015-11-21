@@ -13,14 +13,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-const int ROWS = 2;
-const int COLUMNS = 4;
+const int ROWS = 4;
+const int COLUMNS = 6;
 const int COLORS = 3;
 const int TILESIZE = 40;
 const int PADDING = 0;
 const int STATUSLINE = 40;
 
 // Types of tiles
+const int BLACK = 10;
 const int WHITE = 0;
 const int BLUE = 1;
 const int RED = 2;
@@ -28,12 +29,18 @@ const int ROCK = 3; // GREEN
 const int SCISSORS = 4;
 const int PAPER = 5;
 
+// KEYS
+const int ESC_KEY = 27;
+const int B_KEY = 'b';
+
 // Width: 40 X 15 columns = 600 + padding (16*2) = 632
 GLsizei winWidth = COLUMNS * TILESIZE + (COLUMNS + 1) * PADDING;
 // Height: 40 X 12 rows = 480 + padding (13*2) + status line (20) = 526
 GLsizei winHeight = ROWS * TILESIZE + (ROWS + 1) * PADDING + STATUSLINE;
 
 // State variables
+bool gameStarted;
+bool newGame;
 int grid[ROWS][COLUMNS];
 bool firstClick;
 // A tile structure, to hold the selected tiles coordinates
@@ -45,8 +52,7 @@ struct Tile tile1, tile2;
 // Triad to be deleted
 int triad[3][2];
 
-// DEBUGGING TOOLS
-
+// For debugging
 void printGrid(){
     printf("\n");
     for(int i = 0; i < ROWS ; i++) {
@@ -67,6 +73,7 @@ void initGrid(){
 
 void initRendering() {
     glMatrixMode (GL_PROJECTION);
+    // void gluOrtho2D ( left, right, bottom, top);
     gluOrtho2D (0.0, COLUMNS, ROWS + 1, 0.0);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
@@ -91,6 +98,9 @@ void setColorFromType(int type) {
         case PAPER:
             glColor3f(1,0,1);
             break;
+        case BLACK:
+            glColor3f(0,0,0);
+            break;
     }
 }
 
@@ -104,7 +114,7 @@ void displayQuad(int i, int j) {
 }
 
 void displayGrid() {
-    glClear (GL_COLOR_BUFFER_BIT);
+    // glClear (GL_COLOR_BUFFER_BIT);
 
     for(int i = 0; i < ROWS; i++)
         for(int j = 0; j < COLUMNS; j++) {
@@ -115,13 +125,15 @@ void displayGrid() {
 }
 
 void display() {
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW); //Switch to the drawing perspective
     glLoadIdentity(); //Reset the drawing perspective
 
-    displayGrid();
-    //displayStatus();
+    if(gameStarted) {
+        displayGrid();
+        //TODO update score
+        //displayStatus();
+    }
     glFlush();
 }
 
@@ -213,9 +225,17 @@ void blinkTriad() {
     glutTimerFunc(500, recolorTriad, WHITE);
     glutTimerFunc(750, recolorTriad, oldColor);
     glutTimerFunc(1000, recolorTriad, WHITE);
+    glutTimerFunc(1250, recolorTriad, BLACK);
+}
+
+void eatTiles() {
+
 }
 
 void mouse(GLint button, GLint state, GLint x, GLint y) {
+    // Don't do anything until the game started
+    if(!gameStarted)
+        return;
 
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         if(firstClick) {
@@ -229,10 +249,10 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
                 if(swapTiles()) {
                     if(findTriad()) {
                         blinkTriad();
+                        eatTiles();
                     }
 
-                    displayGrid();
-                    glFlush();
+                    display();
 
                     firstClick = true;
                 }
@@ -254,17 +274,36 @@ void resize(int newWidth, int newHeight) {
     // winHeight = newHeight;
 }
 
-void keyboard(GLubyte curvePlotKey, GLint xMouse, GLint yMouse)
+void keyboard(GLubyte key, GLint xMouse, GLint yMouse)
 {
-    GLint x = xMouse;
-    printf("xMouse = %d\n", x);
-    GLint y = winHeight - yMouse;
-    printf("yMouse = %d\n", y);
+    // GLint x = xMouse;
+    // printf("xMouse = %d\n", x);
+    // GLint y = winHeight - yMouse;
+    // printf("yMouse = %d\n", y);
+    switch(key)
+    {
+        case B_KEY:
+            printf("Starting Game\n");
+            if(!gameStarted) {
+                gameStarted = true;
+                display();
+            }
+            break;
+        case ESC_KEY:
+            printf("User pressed ESC. Quiting!\n");
+            exit(0);
+            break;
+        default:
+            break;
+    }
+
 }
 
 int main(int argc,char** argv) {
     initGrid();
     firstClick = true;
+    gameStarted = false;
+    newGame = false;
 
     glutInit(&argc, argv);
     // glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
