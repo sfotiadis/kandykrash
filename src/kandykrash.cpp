@@ -1,5 +1,4 @@
-// g++  -w -I/usr/include kandykrash.cpp -L/usr/lib/ -framework OpenGL -framework GLUT -o kandykrash
-
+// a
 
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
@@ -16,6 +15,7 @@
 
 const int ROWS = 2;
 const int COLUMNS = 4;
+const int COLORS = 3;
 const int TILESIZE = 40;
 const int PADDING = 0;
 const int STATUSLINE = 40;
@@ -24,7 +24,7 @@ const int STATUSLINE = 40;
 const int WHITE = 0;
 const int BLUE = 1;
 const int RED = 2;
-const int ROCK = 3;
+const int ROCK = 3; // GREEN
 const int SCISSORS = 4;
 const int PAPER = 5;
 
@@ -45,7 +45,7 @@ int triad[3][2];
 
 void printGrid(){
     printf("\n");
-    for(int i = ROWS - 1 ; i >= 0 ; i--) {
+    for(int i = 0; i < ROWS ; i++) {
         for(int j = 0; j < COLUMNS; j++) {
             printf("%d\t",grid[i][j]);
         }
@@ -58,12 +58,12 @@ void printGrid(){
 void initGrid(){
     for(int i = 0; i < ROWS; i++)
         for(int j = 0; j < COLUMNS; j++)
-            grid[i][j] = (i + j) % 3 + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
+            grid[i][j] = (i + j) % COLORS + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
 }
 
 void initRendering() {
     glMatrixMode (GL_PROJECTION);
-    gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
+    gluOrtho2D (0.0, COLUMNS, ROWS + 1, 0.0);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
@@ -104,6 +104,7 @@ void displayGrid() {
 
     for(int i = 0; i < ROWS; i++)
         for(int j = 0; j < COLUMNS; j++) {
+            // TODO change this to displayTile() to add the pgm rendering
             setColorFromType(grid[i][j]);
             displayQuad(j, i);
         }
@@ -125,7 +126,7 @@ void display() {
 bool swapTiles(GLint x, GLint y) {
     if (firstClick) {
         // printf("firstClick\n");
-        firstTile[0] = (winHeight - y) / TILESIZE;
+        firstTile[0] = y / TILESIZE;
         firstTile[1] = x / TILESIZE;
 
         firstClick = false;
@@ -133,7 +134,7 @@ bool swapTiles(GLint x, GLint y) {
         printf("Tile %d %d - Color %d\n", firstTile[0], firstTile[1], grid[firstTile[0]][firstTile[1]]);
     } else {
         // printf("secondClick\n");
-        secondTile[0] = (winHeight - y) / TILESIZE;
+        secondTile[0] = y / TILESIZE;
         secondTile[1] = x / TILESIZE;
 
         //TODO check if neighbors
@@ -212,14 +213,14 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
 
 void resize(int newWidth, int newHeight) {
     /*  Reset viewport and projection parameters  */
-    glViewport (0, 0, newWidth, newHeight);
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
+    // glViewport (0, 0, newWidth, newHeight);
+    // glMatrixMode (GL_PROJECTION);
+    // glLoadIdentity();
+    // gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
 
     /*  Reset display-window size parameters.  */
-    winWidth  = newWidth;
-    winHeight = newHeight;
+    // winWidth  = newWidth;
+    // winHeight = newHeight;
 }
 
 void keyboard(GLubyte curvePlotKey, GLint xMouse, GLint yMouse)
