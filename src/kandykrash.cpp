@@ -36,8 +36,12 @@ GLsizei winHeight = ROWS * TILESIZE + (ROWS + 1) * PADDING + STATUSLINE;
 // State variables
 int grid[ROWS][COLUMNS];
 bool firstClick;
-// The coordinates of the tiles to be swapped
-int firstTile[2], secondTile[2];
+// A tile structure, to hold the selected tiles coordinates
+struct Tile {
+    int row;
+    int col;
+};
+struct Tile tile1, tile2;
 // Triad to be deleted
 int triad[3][2];
 
@@ -121,35 +125,45 @@ void display() {
     glFlush();
 }
 
+bool isTileWithinBounds(int row, int col) {
+    return (row >=0 && row < ROWS) && (col >=0 && col < COLUMNS);
+}
 
-// Returns true after the second click
-bool swapTiles(GLint x, GLint y) {
-    if (firstClick) {
-        // printf("firstClick\n");
-        firstTile[0] = y / TILESIZE;
-        firstTile[1] = x / TILESIZE;
+// Returns true if the tile was correctly returned
+bool getTileFromPixel(int x, int y, Tile* tile) {
+    tile->row = y / TILESIZE; // Mouse reads from bottom-left
+    tile->col = x / TILESIZE; // We are using top-left reference
 
-        firstClick = false;
-        // printf("%d %d\n", x, y);
-        printf("Tile %d %d - Color %d\n", firstTile[0], firstTile[1], grid[firstTile[0]][firstTile[1]]);
-    } else {
-        // printf("secondClick\n");
-        secondTile[0] = y / TILESIZE;
-        secondTile[1] = x / TILESIZE;
-
-        //TODO check if neighbors
-        int buf = grid[firstTile[0]][firstTile[1]];
-        grid[firstTile[0]][firstTile[1]] = grid[secondTile[0]][secondTile[1]];
-        grid[secondTile[0]][secondTile[1]] = buf;
-
-        firstClick = true;
-        printf("Tile %d %d - Color %d\n", secondTile[0], secondTile[1], grid[secondTile[0]][secondTile[1]]);
-
-        printGrid();
-
+    if(isTileWithinBounds(tile->row, tile->col)) {
+        printf("Selected Tile %d %d - Color %d\n", tile->row, tile->col, grid[tile->row][tile->col]);
         return true;
+    } else {
+        printf("Tile out of bounds, select another tile\n");
+        return false;
     }
 }
+
+bool areTilesNeighbours() {
+    return ((tile1.row - tile2.row) == 0 && abs(tile1.col - tile2.col) == 1) || // same row neigbhors
+            (abs(tile1.row - tile2.row) == 1 && (tile1.col - tile2.col) == 0);   // same column neighbors
+}
+
+// Returns true if a swap happened
+bool swapTiles() {
+
+    if(areTilesNeighbours()) {
+        int buf = grid[tile1.row][tile1.col];
+        grid[tile1.row][tile1.col] = grid[tile2.row][tile2.col];
+        grid[tile2.row][tile2.col] = buf;
+
+        printGrid();
+        return true;
+    } else {
+        printf("Not valid swap, select another tile\n");
+    }
+
+}
+
 
 // Checkc first rows and then lines for a match-3. "Paints" the triad to be deleted as white.
 bool findTriad() {
@@ -191,21 +205,38 @@ void recolorTriad(int color) {
     glutPostRedisplay();
 }
 
+void blinkTriad() {
+    // Blink triad effect
+    int oldColor = grid[triad[0][0]][triad[0][1]];
+    recolorTriad(WHITE);
+    glutTimerFunc(250, recolorTriad, oldColor);
+    glutTimerFunc(500, recolorTriad, WHITE);
+    glutTimerFunc(750, recolorTriad, oldColor);
+    glutTimerFunc(1000, recolorTriad, WHITE);
+}
+
 void mouse(GLint button, GLint state, GLint x, GLint y) {
 
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-        if (swapTiles(x, y)) {
-            if(findTriad()) {
-                // Blink triad effect
-                int oldColor = grid[triad[0][0]][triad[0][1]];
-                recolorTriad(WHITE);
-                glutTimerFunc(250, recolorTriad, oldColor);
-                glutTimerFunc(500, recolorTriad, WHITE);
-                glutTimerFunc(750, recolorTriad, oldColor);
-                glutTimerFunc(1000, recolorTriad, WHITE);
+        if(firstClick) {
+            if (getTileFromPixel(x, y, &tile1)) {
+                printf("GOT 1ST TILE\n");
+                firstClick = false;
             }
-            displayGrid();
-            glFlush();
+        } else {
+            if (getTileFromPixel(x, y, &tile2)) {
+                printf("GOT 2ND TILE\n");
+                if(swapTiles()) {
+                    if(findTriad()) {
+                        blinkTriad();
+                    }
+
+                    displayGrid();
+                    glFlush();
+
+                    firstClick = true;
+                }
+            }
         }
     }
 }
