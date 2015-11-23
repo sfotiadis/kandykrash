@@ -1,4 +1,5 @@
-// a
+// Fotiadis Efstathios
+// AM 2009
 
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
@@ -81,6 +82,7 @@ void readPGM(string filename, int arr[40][40]) {
         // Ignoring the first three lines
         string dummyLine;
         getline(file, dummyLine);
+        // TODO only ignore if the the first
         getline(file, dummyLine);
         getline(file, dummyLine);
 
@@ -179,9 +181,9 @@ bool isTileWithinBounds(int row, int col) {
 
 // Returns true if the tile was correctly returned
 bool getTileFromPixel(int x, int y, Tile* tile) {
+    // TODO Could be fixed with glViewPort?
     tile->row = y / TILESIZE; // Mouse reads from bottom-left
-    tile->col = x / TILESIZE; // We are using top-left reference
-
+    tile->col = x / TILESIZE; // We are using top-left reference.
     if(isTileWithinBounds(tile->row, tile->col)) {
         printf("Selected Tile %d %d - Color %d\n", tile->row, tile->col, grid[tile->row][tile->col]);
         return true;
