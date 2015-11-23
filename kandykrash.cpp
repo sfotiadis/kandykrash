@@ -20,9 +20,9 @@
 
 using namespace std;
 
-const int ROWS = 4;
-const int COLUMNS = 6;
-const int COLORS = 3;
+const int ROWS = 8;
+const int COLUMNS = 10;
+const int COLORS = 5;
 const int TILESIZE = 40;
 const int PADDING = 0;
 const int STATUSLINE = 40;
@@ -61,8 +61,7 @@ int triad[3][2];
 
 // Icons
 // GLubyte* ICON_ROCK;
-GLubyte*    ICON_ROCK = new GLubyte[TILESIZE * TILESIZE * 3];
-
+GLubyte* ICON_ROCK;
 GLubyte* ICON_PAPER;
 GLubyte* ICON_SCISSORS;
 
@@ -78,38 +77,6 @@ void printGrid(){
     printf("\n");
 }
 
-
-void readPGM(string filename, GLubyte texArray[]) {
-    ifstream file(filename);
-
-    if (file.is_open()) {
-        // Ignoring the first three lines
-        string dummyLine;
-        getline(file, dummyLine);
-        // TODO only ignore if the the first
-        getline(file, dummyLine);
-        getline(file, dummyLine);
-
-        int grayScaleValue;
-        for(int k = 0; k < TILESIZE; k++) {
-            for (int l = 0; l < TILESIZE; l++) {
-                file >> grayScaleValue;
-                texArray[k * TILESIZE + l]= (GLubyte) grayScaleValue;
-                texArray[k * TILESIZE + l + 1]= (GLubyte) grayScaleValue;
-                texArray[k * TILESIZE + l + 2]= (GLubyte) grayScaleValue;
-                // cout << arr[i][j] << " ";
-            }
-            // cout << "\n";
-         }
-
-    } else {
-        cout << "File: " << filename << " could not be opened";
-        exit(0);
-    }
-
-    file.close();
-}
-
 // Randonly initialize the grid
 void initGrid(){
     for(int i = 0; i < ROWS; i++)
@@ -122,45 +89,56 @@ void initRendering() {
     // void gluOrtho2D ( left, right, bottom, top);
     gluOrtho2D (0.0, COLUMNS, ROWS + 1, 0.0);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    glEnable(GL_TEXTURE_2D);
 }
 
-void setColorFromType(int type) {
+void setTextureFromType(int type) {
     switch(type) {
         case WHITE:
+            glDisable(GL_TEXTURE_2D);
             glColor3f(1,1,1);
             break;
         case BLUE:
+            glDisable(GL_TEXTURE_2D);
             glColor3f(0,0,1);
             break;
         case RED:
+            glDisable(GL_TEXTURE_2D);
             glColor3f(1,0,0);
             break;
         case ROCK:
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, ROCK);
             glColor3f(0,1,0);
             break;
-        case SCISSORS:
-            glColor3f(1,1,0);
-            break;
         case PAPER:
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, PAPER);
             glColor3f(1,0,1);
             break;
+        case SCISSORS:
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, SCISSORS);
+            glColor3f(1,1,0);
+            break;
         case BLACK:
+            glDisable(GL_TEXTURE_2D);
             glColor3f(0,0,0);
             break;
     }
 }
 
 void displayTile(int i, int j) {
-
-    glBindTexture(GL_TEXTURE_2D, SCISSORS);
+    setTextureFromType(grid[j][i]);
     glBegin(GL_QUADS);
-        glTexCoord2f(i, j);
+        glTexCoord2f(0, 0);
         glVertex2f(i, j);
-        glTexCoord2f (i+1, j);
+        glTexCoord2f (1, 0);
         glVertex2f(i+1, j);
-        glTexCoord2f (i+1, j+1);
+        glTexCoord2f (1, 1);
         glVertex2f(i+1, j+1);
-        glTexCoord2f (i, j+1);
+        glTexCoord2f (0, 1);
         glVertex2f(i, j+1);
     glEnd();
 }
@@ -170,8 +148,6 @@ void displayGrid() {
 
     for(int i = 0; i < ROWS; i++)
         for(int j = 0; j < COLUMNS; j++) {
-            // TODO change this to displayTile() to add the pgm rendering
-            // setColorFromType(grid[i][j]);
             displayTile(j, i); //
         }
 }
@@ -352,11 +328,38 @@ void keyboard(GLubyte key, GLint xMouse, GLint yMouse)
 
 }
 
+void readPGM(string filename, GLubyte* texArray) {
+    ifstream file(filename);
+
+    if (file.is_open()) {
+        // Ignoring the first three lines
+        string dummyLine;
+        getline(file, dummyLine);
+        // TODO only ignore if the the first i #
+        getline(file, dummyLine);
+        getline(file, dummyLine);
+
+        int grayScaleValue;
+        for(int k = 0; k < TILESIZE; k++) {
+            for (int l = 0; l < TILESIZE; l+=1) {
+                file >> grayScaleValue;
+                texArray[k * TILESIZE + l]= (GLubyte) grayScaleValue;
+            }
+         }
+
+    } else {
+        cout << "File: " << filename << " could not be opened";
+        exit(0);
+    }
+
+    file.close();
+}
+
 void loadTexture(int texName, GLubyte* texture) {
     glBindTexture(GL_TEXTURE_2D, texName);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TILESIZE, TILESIZE, 0, GL_RGB, GL_UNSIGNED_BYTE, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, TILESIZE, TILESIZE, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, texture);
 }
 
 void initState() {
@@ -364,18 +367,15 @@ void initState() {
     gameStarted = false;
     newGame = false;
 
-    glEnable(GL_TEXTURE_2D);
-
-    ICON_ROCK = new GLubyte[TILESIZE * TILESIZE * 3];
+    ICON_ROCK = new GLubyte[TILESIZE * TILESIZE];
     readPGM("assets/rock.pgm", ICON_ROCK);
     loadTexture(ROCK, ICON_ROCK);
 
-
-    ICON_PAPER = new GLubyte[TILESIZE * TILESIZE * 3];
+    ICON_PAPER = new GLubyte[TILESIZE * TILESIZE];
     readPGM("assets/paper.pgm", ICON_PAPER);
     loadTexture(PAPER, ICON_PAPER);
 
-    ICON_SCISSORS = new GLubyte[TILESIZE * TILESIZE * 3];
+    ICON_SCISSORS = new GLubyte[TILESIZE * TILESIZE];
     readPGM("assets/scissors.pgm", ICON_SCISSORS);
     loadTexture(SCISSORS, ICON_SCISSORS);
 }
