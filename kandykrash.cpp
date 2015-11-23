@@ -152,6 +152,19 @@ void displayGrid() {
         }
 }
 
+void drawString (char *s, float x, float y){
+     unsigned int i;
+     glRasterPos2f(x, y);
+
+     for (i = 0; i < strlen (s); i++)
+          glutBitmapCharacter (GLUT_BITMAP_HELVETICA_12, s[i]);
+}
+
+void displayStatus() {
+    glColor3f(1,1,1);
+    drawString("press b to start", 0.5 , ROWS + 0.5);
+}
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW); //Switch to the drawing perspective
@@ -160,7 +173,7 @@ void display() {
     if(gameStarted) {
         displayGrid();
         //TODO update score
-        //displayStatus();
+        displayStatus();
     }
     glutSwapBuffers();
 }
@@ -270,6 +283,7 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
         if(firstClick) {
             if (getTileFromPixel(x, y, &tile1)) {
                 printf("GOT 1ST TILE\n");
+                //TODO paint the outline of the tile
                 firstClick = false;
             }
         } else {
@@ -346,7 +360,6 @@ void readPGM(string filename, GLubyte* texArray) {
                 texArray[k * TILESIZE + l]= (GLubyte) grayScaleValue;
             }
          }
-
     } else {
         cout << "File: " << filename << " could not be opened";
         exit(0);
@@ -357,6 +370,7 @@ void readPGM(string filename, GLubyte* texArray) {
 
 void loadTexture(int texName, GLubyte* texture) {
     glBindTexture(GL_TEXTURE_2D, texName);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); // Does not allow color
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, TILESIZE, TILESIZE, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, texture);
@@ -382,7 +396,7 @@ void initState() {
 
 int main(int argc,char** argv) {
     initGrid();
-    // TODO Check gia pi8anes triades
+    // TODO Check gia pi8anes triades stin arxi
 
     glutInit(&argc, argv);
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
