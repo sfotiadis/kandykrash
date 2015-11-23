@@ -32,9 +32,9 @@ const int BLACK = 10;
 const int WHITE = 0;
 const int BLUE = 1;
 const int RED = 2;
-const GLuint ROCK = 3; // GREEN
-const GLuint PAPER = 4;
-const GLuint SCISSORS = 5;
+const int ROCK = 3; // GREEN
+const int PAPER = 4;
+const int SCISSORS = 5;
 
 // KEYS
 const int ESC_KEY = 27;
@@ -60,11 +60,9 @@ struct Tile tile1, tile2;
 int triad[3][2];
 
 // Icons
-// GLubyte* ICON_ROCK;
-GLubyte*    ICON_ROCK = new GLubyte[TILESIZE * TILESIZE * 3];
-
-GLubyte* ICON_PAPER;
-GLubyte* ICON_SCISSORS;
+int ICON_ROCK[TILESIZE][TILESIZE];
+int ICON_PAPER[TILESIZE][TILESIZE];
+int ICON_SCISSORS[TILESIZE][TILESIZE];
 
 // For debugging
 void printGrid(){
@@ -79,7 +77,7 @@ void printGrid(){
 }
 
 
-void readPGM(string filename, GLubyte texArray[]) {
+void readPGM(string filename, int arr[40][40]) {
     ifstream file(filename);
 
     if (file.is_open()) {
@@ -90,13 +88,9 @@ void readPGM(string filename, GLubyte texArray[]) {
         getline(file, dummyLine);
         getline(file, dummyLine);
 
-        int grayScaleValue;
-        for(int k = 0; k < TILESIZE; k++) {
-            for (int l = 0; l < TILESIZE; l++) {
-                file >> grayScaleValue;
-                texArray[k * TILESIZE + l]= (GLubyte) grayScaleValue;
-                texArray[k * TILESIZE + l + 1]= (GLubyte) grayScaleValue;
-                texArray[k * TILESIZE + l + 2]= (GLubyte) grayScaleValue;
+        for(int i = 0; i < TILESIZE; i++) {
+            for (int j = 0; j < TILESIZE; j++) {
+                file >> arr[i][j];
                 // cout << arr[i][j] << " ";
             }
             // cout << "\n";
@@ -151,16 +145,10 @@ void setColorFromType(int type) {
 }
 
 void displayTile(int i, int j) {
-
-    glBindTexture(GL_TEXTURE_2D, SCISSORS);
     glBegin(GL_QUADS);
-        glTexCoord2f(i, j);
         glVertex2f(i, j);
-        glTexCoord2f (i+1, j);
         glVertex2f(i+1, j);
-        glTexCoord2f (i+1, j+1);
         glVertex2f(i+1, j+1);
-        glTexCoord2f (i, j+1);
         glVertex2f(i, j+1);
     glEnd();
 }
@@ -171,7 +159,7 @@ void displayGrid() {
     for(int i = 0; i < ROWS; i++)
         for(int j = 0; j < COLUMNS; j++) {
             // TODO change this to displayTile() to add the pgm rendering
-            // setColorFromType(grid[i][j]);
+            setColorFromType(grid[i][j]);
             displayTile(j, i); //
         }
 }
@@ -181,11 +169,8 @@ void display() {
     glMatrixMode(GL_MODELVIEW); //Switch to the drawing perspective
     glLoadIdentity(); //Reset the drawing perspective
 
-    if(gameStarted) {
-        displayGrid();
-        //TODO update score
-        //displayStatus();
-    }
+   RenderObjects();
+
     glutSwapBuffers();
 }
 
@@ -352,37 +337,20 @@ void keyboard(GLubyte key, GLint xMouse, GLint yMouse)
 
 }
 
-void loadTexture(int texName, GLubyte* texture) {
-    glBindTexture(GL_TEXTURE_2D, texName);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TILESIZE, TILESIZE, 0, GL_RGB, GL_UNSIGNED_BYTE, texture);
-}
-
 void initState() {
     firstClick = true;
     gameStarted = false;
     newGame = false;
 
-    glEnable(GL_TEXTURE_2D);
-
-    ICON_ROCK = new GLubyte[TILESIZE * TILESIZE * 3];
     readPGM("assets/rock.pgm", ICON_ROCK);
-    loadTexture(ROCK, ICON_ROCK);
-
-
-    ICON_PAPER = new GLubyte[TILESIZE * TILESIZE * 3];
     readPGM("assets/paper.pgm", ICON_PAPER);
-    loadTexture(PAPER, ICON_PAPER);
-
-    ICON_SCISSORS = new GLubyte[TILESIZE * TILESIZE * 3];
     readPGM("assets/scissors.pgm", ICON_SCISSORS);
-    loadTexture(SCISSORS, ICON_SCISSORS);
 }
 
 int main(int argc,char** argv) {
     initGrid();
     // TODO Check gia pi8anes triades
+    initState();
 
     glutInit(&argc, argv);
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
@@ -390,7 +358,6 @@ int main(int argc,char** argv) {
     glutInitWindowSize (winWidth, winHeight);
     glutCreateWindow ("Kandy Krash");
 
-    initState();
     initRendering();
 
     glutDisplayFunc(display);
