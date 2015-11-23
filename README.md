@@ -1,2 +1,2 @@
 # kandykrash
-Candy Crush clone - OpelGL Assignment
+Candy Crush clone - OpenGL Assignment
