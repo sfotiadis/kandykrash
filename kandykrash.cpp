@@ -20,11 +20,11 @@
 
 using namespace std;
 
-bool checkForTriad();
+void checkForTriad();
 void deleteTriad();
 
-const int ROWS = 4;
-const int COLUMNS = 6;
+const int ROWS = 14;
+const int COLUMNS = 16;
 const int COLORS = 5;
 const int TILESIZE = 40;
 const int PADDING = 0;
@@ -38,6 +38,10 @@ const int RED = 2;
 const GLuint ROCK = 3; // GREEN
 const GLuint PAPER = 4;
 const GLuint SCISSORS = 5;
+
+// Orientation
+const int HORIZONTAL = 0;
+const int VERTICAL = 1;
 
 // KEYS
 const int ESC_KEY = 27;
@@ -57,13 +61,14 @@ int moves;
 int score;
 char status[50];
 // A tile structure, to hold the selected tiles coordinates
-struct Tile {
+typedef struct Tile {
     int row;
     int col;
-};
-struct Tile tile1, tile2;
+} Tile;
+Tile tile1, tile2;
 // Triad to be deleted
 int triad[3][2];
+int triadOrientation;
 // Icons
 // GLubyte* ICON_ROCK;
 GLubyte* ICON_ROCK;
@@ -260,9 +265,7 @@ void dropTiles(int dummy) {
     if(rerun) {
         dropTiles(NULL);
     } else { // All tiles dropped. Check again for triads.
-        if(checkForTriad()) {
-            deleteTriad();
-        }
+        checkForTriad();
     }
 
     glutPostRedisplay();
@@ -282,8 +285,46 @@ void deleteTriad() {
     glutTimerFunc(1500, dropTiles, NULL);
 }
 
+// Returns the upper-left and bottom-right tiles of the affected neighborhood
+void getNeighborhood(Tile* region) {
+
+    //top left coordinates
+    region[0].row = max(triad[0][0] - 3, 0);
+    region[0].col = max(triad[0][1] - 3, 0);
+
+    //bottom right coordinates
+    region[1].row = min(triad[2][0] + 3, ROWS);
+    region[1].col = min(triad[2][1] + 3, COLUMNS);
+}
+
+void eatSurroundings() {
+    int topLeft[2] = {triad[0][0], triad[0][1]};
+    int type = grid[triad[0][0]][triad[0][1]];
+
+    Tile region[2];
+    getNeighborhood(region);
+
+    printf("Neighborhood:\n");
+    printf("UPPER-LEFT %d %d\n", region[0].row, region[0].col);
+    printf("BOTTOM-RIGHT %d %d\n", region[1].row, region[1].col);
+
+    if(type == BLUE || type == RED) {
+        printf("BLUE/RED Triad\n");
+        return;
+    } else if(type == ROCK) {
+        printf("ROCK Triad\n");
+        // TODO eat things in the neighbourghood
+    } else if(type == PAPER) {
+        printf("PAPER Triad\n");
+
+    } else if(type == SCISSORS) {
+        printf("SCISSORS Triad\n");
+    }
+}
+
 // Checkc first rows and then lines for a match-3. "Paints" the triad to be deleted as white.
-bool checkForTriad() {
+void checkForTriad() {
+    bool found = false;
     int c = 0;
     int v;
 
@@ -307,7 +348,8 @@ bool checkForTriad() {
                 triad[1][0] = i; triad[1][1] = j - 1;
                 triad[2][0] = i; triad[2][1] = j;
 
-                return true;
+                found = true;
+                triadOrientation = HORIZONTAL;
             }
         }
     }
@@ -328,16 +370,26 @@ bool checkForTriad() {
 
             // triad found
             if(c == 3) {
-                triad[0][0] = i; triad[0][1] = j;
+                triad[0][0] = i - 2; triad[0][1] = j;
                 triad[1][0] = i - 1; triad[1][1] = j;
-                triad[2][0] = i - 2; triad[2][1] = j;
+                triad[2][0] = i; triad[2][1] = j;
 
-                return true;
+                found = true;
+                triadOrientation = VERTICAL;
             }
         }
     }
 
-    return false;
+    if(found) {
+        printf("Found triad %d %d - %d %d - %d %d\n",
+        triad[0][0], triad[0][1],
+        triad[1][0], triad[1][1],
+        triad[2][0], triad[2][1] );
+
+        score += 10;
+        eatSurroundings();
+        deleteTriad();
+    }
 }
 
 void mouse(GLint button, GLint state, GLint x, GLint y) {
@@ -357,13 +409,7 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
             if (getTileFromPixel(x, y, &tile2)) {
                 printf("GOT 2ND TILE\n");
                 if(swapTiles()) {
-                    if(checkForTriad()) {
-                        printf("Found triad %d %d - %d %d - %d %d\n",
-                                triad[0][0], triad[0][1],
-                                triad[1][0], triad[1][1],
-                                triad[2][0], triad[2][1] );
-                        deleteTriad();
-                    }
+                    checkForTriad();
                     moves--;
                     glutPostRedisplay();
                     // display(); // equivalent ?
