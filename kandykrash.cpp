@@ -20,8 +20,11 @@
 
 using namespace std;
 
-const int ROWS = 8;
-const int COLUMNS = 10;
+bool checkForTriad();
+void deleteTriad();
+
+const int ROWS = 4;
+const int COLUMNS = 6;
 const int COLORS = 5;
 const int TILESIZE = 40;
 const int PADDING = 0;
@@ -83,6 +86,7 @@ void printGrid(){
 void initGrid(){
     for(int i = 0; i < ROWS; i++)
         for(int j = 0; j < COLUMNS; j++)
+            // TODO CHANGE TO RANDOM
             grid[i][j] = (i + j) % COLORS + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
 }
 
@@ -227,9 +231,59 @@ bool swapTiles() {
 
 }
 
+void recolorTriad(int color) {
+    for(int i = 0; i <3; i++) {
+            grid[triad[i][0]][triad[i][1]] = color;
+    }
+    glutPostRedisplay();
+}
+
+void dropTiles(int dummy) {
+    bool rerun = false;
+    int buf;
+    for(int i = 0; i < ROWS; i++) {
+        for(int j = 0; j < COLUMNS; j++) {
+            if(grid[i][j] == WHITE) {
+                // If top row then create new tile
+                if(i == 0) {
+                    grid[i][j] = BLUE + (rand() % (int)(PAPER - BLUE + 1));
+                } else {
+                    buf = grid[i][j];
+                    grid[i][j] = grid[i - 1][j];
+                    grid[i - 1][j] = buf;
+                    rerun = true;
+                }
+            }
+        }
+    }
+
+    if(rerun) {
+        dropTiles(NULL);
+    } else { // All tiles dropped. Check again for triads.
+        if(checkForTriad()) {
+            deleteTriad();
+        }
+    }
+
+    glutPostRedisplay();
+}
+
+void deleteTriad() {
+    printf("Deleting Triad\n");
+
+    // Blink triad effect
+    int oldColor = grid[triad[0][0]][triad[0][1]];
+    recolorTriad(WHITE);
+    glutTimerFunc(250, recolorTriad, oldColor);
+    glutTimerFunc(500, recolorTriad, WHITE);
+    glutTimerFunc(750, recolorTriad, oldColor);
+    glutTimerFunc(1000, recolorTriad, WHITE);
+    // glutTimerFunc(1250, recolorTriad, BLACK);
+    glutTimerFunc(1500, dropTiles, NULL);
+}
 
 // Checkc first rows and then lines for a match-3. "Paints" the triad to be deleted as white.
-bool findTriad() {
+bool checkForTriad() {
     int c = 0;
     int v;
 
@@ -286,28 +340,6 @@ bool findTriad() {
     return false;
 }
 
-void recolorTriad(int color) {
-    for(int i = 0; i <3; i++) {
-            grid[triad[i][0]][triad[i][1]] = color;
-    }
-    glutPostRedisplay();
-}
-
-void blinkTriad() {
-    // Blink triad effect
-    int oldColor = grid[triad[0][0]][triad[0][1]];
-    recolorTriad(WHITE);
-    // glutTimerFunc(250, recolorTriad, oldColor);
-    // glutTimerFunc(500, recolorTriad, WHITE);
-    // glutTimerFunc(750, recolorTriad, oldColor);
-    // glutTimerFunc(1000, recolorTriad, WHITE);
-    // glutTimerFunc(1250, recolorTriad, BLACK);
-}
-
-void eatTiles() {
-
-}
-
 void mouse(GLint button, GLint state, GLint x, GLint y) {
     // printf("MOUSE X: %d,\tY: %d\n", x, y);
     // Don't do anything until the game started
@@ -325,12 +357,16 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
             if (getTileFromPixel(x, y, &tile2)) {
                 printf("GOT 2ND TILE\n");
                 if(swapTiles()) {
-                    if(findTriad()) {
-                        blinkTriad();
-                        eatTiles();
+                    if(checkForTriad()) {
+                        printf("Found triad %d %d - %d %d - %d %d\n",
+                                triad[0][0], triad[0][1],
+                                triad[1][0], triad[1][1],
+                                triad[2][0], triad[2][1] );
+                        deleteTriad();
                     }
                     moves--;
-                    display();
+                    glutPostRedisplay();
+                    // display(); // equivalent ?
 
                     firstClick = true;
                 }
@@ -430,7 +466,8 @@ void initState() {
 
     int score = 0;
     printf("Please give number of moves:");
-    scanf("%d", &moves);
+    // scanf("%d", &moves);
+    moves = 100;
 }
 
 int main(int argc,char** argv) {
