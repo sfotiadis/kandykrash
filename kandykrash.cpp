@@ -50,6 +50,9 @@ bool gameStarted;
 bool newGame;
 int grid[ROWS][COLUMNS];
 bool firstClick;
+int moves;
+int score;
+char status[50];
 // A tile structure, to hold the selected tiles coordinates
 struct Tile {
     int row;
@@ -58,7 +61,6 @@ struct Tile {
 struct Tile tile1, tile2;
 // Triad to be deleted
 int triad[3][2];
-
 // Icons
 // GLubyte* ICON_ROCK;
 GLubyte* ICON_ROCK;
@@ -157,12 +159,18 @@ void drawString (char *s, float x, float y){
      glRasterPos2f(x, y);
 
      for (i = 0; i < strlen (s); i++)
-          glutBitmapCharacter (GLUT_BITMAP_HELVETICA_12, s[i]);
+          glutBitmapCharacter (GLUT_BITMAP_HELVETICA_18, s[i]);
 }
 
-void displayStatus() {
+void displayStatusBar() {
     glColor3f(1,1,1);
-    drawString("press b to start", 0.5 , ROWS + 0.5);
+    sprintf(status, "Moves %d \n Score %d", moves, score);
+    drawString(status, 0.5 , ROWS + 0.5);
+}
+
+void displayPressKey() {
+    glColor3f(1,1,1);
+    drawString("Press 'b' to start", COLUMNS/2 - 2 , ROWS/2);
 }
 
 void display() {
@@ -173,7 +181,9 @@ void display() {
     if(gameStarted) {
         displayGrid();
         //TODO update score
-        displayStatus();
+        displayStatusBar();
+    } else {
+        displayPressKey();
     }
     glutSwapBuffers();
 }
@@ -248,6 +258,31 @@ bool findTriad() {
         }
     }
 
+    // Then look at columns
+    for(int j = 0; j < COLUMNS ; j++) {
+        v = grid[0][j]; // first row of the column
+        c = 1;
+        for(int i = 1; i < ROWS; i++) {
+
+            // if same as previous add to counter
+            if(grid[i][j] == v) {
+                c++;
+            } else { // start again
+                c = 1;
+                v = grid[i][j];
+            }
+
+            // triad found
+            if(c == 3) {
+                triad[0][0] = i; triad[0][1] = j;
+                triad[1][0] = i - 1; triad[1][1] = j;
+                triad[2][0] = i - 2; triad[2][1] = j;
+
+                return true;
+            }
+        }
+    }
+
     return false;
 }
 
@@ -262,11 +297,11 @@ void blinkTriad() {
     // Blink triad effect
     int oldColor = grid[triad[0][0]][triad[0][1]];
     recolorTriad(WHITE);
-    glutTimerFunc(250, recolorTriad, oldColor);
-    glutTimerFunc(500, recolorTriad, WHITE);
-    glutTimerFunc(750, recolorTriad, oldColor);
-    glutTimerFunc(1000, recolorTriad, WHITE);
-    glutTimerFunc(1250, recolorTriad, BLACK);
+    // glutTimerFunc(250, recolorTriad, oldColor);
+    // glutTimerFunc(500, recolorTriad, WHITE);
+    // glutTimerFunc(750, recolorTriad, oldColor);
+    // glutTimerFunc(1000, recolorTriad, WHITE);
+    // glutTimerFunc(1250, recolorTriad, BLACK);
 }
 
 void eatTiles() {
@@ -274,9 +309,9 @@ void eatTiles() {
 }
 
 void mouse(GLint button, GLint state, GLint x, GLint y) {
-    printf("MOUSE X: %d,\tY: %d\n", x, y);
+    // printf("MOUSE X: %d,\tY: %d\n", x, y);
     // Don't do anything until the game started
-    if(!gameStarted)
+    if(!gameStarted || moves == 0)
         return;
 
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
@@ -294,7 +329,7 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
                         blinkTriad();
                         eatTiles();
                     }
-
+                    moves--;
                     display();
 
                     firstClick = true;
@@ -392,6 +427,10 @@ void initState() {
     ICON_SCISSORS = new GLubyte[TILESIZE * TILESIZE];
     readPGM("assets/scissors.pgm", ICON_SCISSORS);
     loadTexture(SCISSORS, ICON_SCISSORS);
+
+    int score = 0;
+    printf("Please give number of moves:");
+    scanf("%d", &moves);
 }
 
 int main(int argc,char** argv) {
