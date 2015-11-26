@@ -225,7 +225,7 @@ bool getTileFromPixel(int x, int y, Tile* tile) {
     tile->row = y / TILESIZE; // Mouse reads from bottom-left
     tile->col = x / TILESIZE; // We are using top-left reference.
     if(isTileWithinBounds(tile->row, tile->col)) {
-        printf("Selected Tile %d %d - Color %d\n", tile->row, tile->col, grid[tile->row][tile->col]);
+        // printf("Selected Tile %d %d - Color %d\n", tile->row, tile->col, grid[tile->row][tile->col]);
         return true;
     } else {
         printf("Tile out of bounds, select another tile\n");
@@ -501,10 +501,10 @@ void checkForTriad() {
     }
 
     if(found) {
-        printf("Found triad %d %d - %d %d - %d %d\n",
-        triad[0][0], triad[0][1],
-        triad[1][0], triad[1][1],
-        triad[2][0], triad[2][1] );
+        // printf("Found triad %d %d - %d %d - %d %d\n",
+        // triad[0][0], triad[0][1],
+        // triad[1][0], triad[1][1],
+        // triad[2][0], triad[2][1] );
 
         score += 10;
         eatTriadSurroundings();
