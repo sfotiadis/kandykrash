@@ -177,7 +177,7 @@ void displayStatusBar() {
     if(moves > 0) {
         sprintf(status, "Moves %d \t Score %d", moves, score);
     } else {
-        sprintf(status, "Final Score %d - Press 'b' to start again", moves, score);
+        sprintf(status, "Final Score %d - Press 'b' to start again", score);
     }
 
     drawString(status, 0.5 , ROWS + 0.5);
@@ -263,6 +263,68 @@ void recolorTriad(int color) {
     glutPostRedisplay();
 }
 
+// if there is not black tile bellow --> it stopped falling
+bool tileStoppedFalling(int r, int c) {
+    for(int i = r + 1; r < ROWS; r++) {
+        if(grid[i][c] == DELETE_COLOR) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void eatTileSurroundings(int i, int j) {
+    int type = grid[i][j];
+
+    int eats;
+    int getsEatenBy;
+
+    if(type == BLUE || type == RED) {
+        return;
+    } else if(type == ROCK) {
+        eats = SCISSORS;
+        getsEatenBy = PAPER;
+    } else if(type == PAPER) {
+        eats = ROCK;
+        getsEatenBy = SCISSORS;
+    } else if(type == SCISSORS) {
+        eats = PAPER;
+        getsEatenBy = ROCK;
+    }
+
+    // eat above
+    int k = i - 1;
+    if(k >= 0) {
+        if(grid[k][j] == eats){
+            grid[k][j] = DELETE_COLOR;
+        }
+    }
+
+    // eat below
+    k = i + 1;
+    if(k < ROWS) {
+        if(grid[k][j] == eats){
+            grid[k][j] = DELETE_COLOR;
+        }
+    }
+
+    // eat left
+    k = j - 1;
+    if(k >= 0) {
+        if(grid[i][k] == eats){
+            grid[i][k] = DELETE_COLOR;
+        }
+    }
+
+    // eat right
+    k = j + 1;
+    if(k < COLUMNS) {
+        if(grid[i][k] == eats){
+            grid[i][k] = DELETE_COLOR;
+        }
+    }
+}
+
 void dropTiles(int dummy) {
     bool rerun = false;
     int buf;
@@ -276,12 +338,17 @@ void dropTiles(int dummy) {
                     buf = grid[i][j];
                     grid[i][j] = grid[i - 1][j];
                     grid[i - 1][j] = buf;
-                    // TODO destroy if stopped falling
+                    // When stop falling eat elligible surroundings tiles
+                    if(tileStoppedFalling(i, j)) {
+                        eatTileSurroundings(i, j);
+                    }
                     rerun = true;
                 }
             }
         }
     }
+
+    glutPostRedisplay();
 
     if(rerun) {
         dropTiles(NULL);
@@ -381,7 +448,7 @@ void eatTriadSurroundings() {
     }
 }
 
-// Checkc first rows and then lines for a match-3. "Paints" the triad to be deleted as white.
+// Check first rows and then lines for a match-3. "Paints" the triad to be deleted as white.
 void checkForTriad() {
     bool found = false;
     int c = 0;
@@ -448,8 +515,6 @@ void checkForTriad() {
         score += 10;
         eatTriadSurroundings();
         deleteTriad();
-        // recolorTriad(DELETE_COLOR);
-        // dropTiles(0);§
     }
 }
 
@@ -462,17 +527,14 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         if(firstClick) {
             if (getTileFromPixel(x, y, &tile1)) {
-                // printf("GOT 1ST TILE\n");
                 firstClick = false;
                 glutPostRedisplay();
             }
         } else {
             if (getTileFromPixel(x, y, &tile2)) {
-                // printf("GOT 2ND TILE\n");
                 if(swapTiles()) {
                     checkForTriad();
                     moves -= 1;
-                    // printf("MOVES: %d\n",moves);
                     glutPostRedisplay();
                     // display(); // equivalent ?
 
@@ -513,14 +575,13 @@ void keyboard(GLubyte key, GLint xMouse, GLint yMouse)
             if(!gameStarted) {
                 printf("Starting Game\n");
                 gameStarted = true;
-                glutPostRedisplay();
             } else if(moves == 0) {
                 printf("Re-starting Game\n");
                 moves = initialMoves;
                 score = 0;
                 initGrid();
-                glutPostRedisplay();
             }
+            glutPostRedisplay();
             break;
         case ESC_KEY:
             printf("User pressed ESC. Quiting!\n");
