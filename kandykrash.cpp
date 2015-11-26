@@ -332,7 +332,24 @@ int distFromTriad(int r, int c) {
     return max(dx, dy);
 }
 
-void eatTiles(int eats, int getsEatenBy){
+void eatTriadSurroundings() {
+    int type = grid[triad[0][0]][triad[0][1]];
+    int eats;
+    int getsEatenBy;
+
+    if(type == BLUE || type == RED) {
+        return;
+    } else if(type == ROCK) {
+        eats = SCISSORS;
+        getsEatenBy = PAPER;
+    } else if(type == PAPER) {
+        eats = ROCK;
+        getsEatenBy = SCISSORS;
+    } else if(type == SCISSORS) {
+        eats = PAPER;
+        getsEatenBy = ROCK;
+    }
+
     int dist;
 
     Tile hood[2];
@@ -348,7 +365,6 @@ void eatTiles(int eats, int getsEatenBy){
             // regions 2 & 3 (yellow & blue)
             dist = distFromTriad(i, j);
             if(dist == 2 || dist == 3)  {
-                // cnt++;
                 if(grid[i][j] == eats) {
                     grid[i][j] = DELETE_COLOR;
                     score += 2;
@@ -362,25 +378,6 @@ void eatTiles(int eats, int getsEatenBy){
                 }
             }
         }
-    }
-    // printf("CNT %d\n", cnt);
-}
-
-void eatTriadSurroundings() {
-    int type = grid[triad[0][0]][triad[0][1]];
-
-    if(type == BLUE || type == RED) {
-        // printf("BLUE/RED Triad\n");
-        return;
-    } else if(type == ROCK) {
-        // printf("ROCK Triad\n");
-        eatTiles(SCISSORS, PAPER);
-    } else if(type == PAPER) {
-        // printf("PAPER Triad\n");
-        eatTiles(ROCK, SCISSORS);
-    } else if(type == SCISSORS) {
-        // printf("SCISSORS Triad\n");
-        eatTiles(PAPER, ROCK);
     }
 }
 
@@ -589,7 +586,7 @@ void initState() {
     printf("Please give number of moves:");
     // TODO remove the fixed value
     // scanf("%d", &moves);
-    initialMoves = 1;
+    initialMoves = 2;
     moves = initialMoves;
 }
 
