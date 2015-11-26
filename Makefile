@@ -4,14 +4,14 @@ CC = g++
 # CFLAGS = -g
 GCCFLAGS = -w
 
-ifeq ($(OSTYPE),solaris)
-INCLUDE = -I/usr/local/include
-LDFLAGS = -L/usr/local/lib/
-LDLIBS =  -lGL -lglut -lm
-else
+ifeq ($(OS), mac)
 INCLUDE = -I/usr/include
 LDFLAGS = -L/usr/lib/
 LDLIBS = -lm -framework OpenGL -framework GLUT
+else
+INCLUDE = -I/usr/local/include
+LDFLAGS = -L/usr/local/lib/
+LDLIBS =  -lGL -lGLU -lglut -lm
 endif
 
 PROG=kandykrash

@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <cstring>
 
 using namespace std;
 
@@ -165,7 +166,7 @@ void drawString (char *s, float x, float y){
      unsigned int i;
      glRasterPos2f(x, y);
 
-     for (i = 0; i < strlen (s); i++)
+     for (i = 0; i < strlen(s); i++)
           glutBitmapCharacter (GLUT_BITMAP_HELVETICA_18, s[i]);
 }
 
@@ -510,7 +511,7 @@ void keyboard(GLubyte key, GLint xMouse, GLint yMouse)
 }
 
 void readPGM(string filename, GLubyte* texArray) {
-    ifstream file(filename);
+    ifstream file(filename.c_str());
 
     if (file.is_open()) {
         // Ignoring the first three lines
