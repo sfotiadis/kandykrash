@@ -1,8 +1,5 @@
 // Fotiadis Efstathios
 // AM 2009
-
-// g++  -w -I/usr/include kandykrash.cpp -L/usr/lib/ -framework OpenGL -framework GLUT -o kandykrash
-
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
@@ -23,10 +20,10 @@ using namespace std;
 void checkForTriad();
 void deleteTriad();
 
-const int ROWS = 14;
+const int ROWS = 16;
 const int COLUMNS = 16;
 const int COLORS = 5;
-const int TILESIZE = 40;
+int TILESIZE = 40;
 const int PADDING = 0;
 const int STATUSLINE = 40;
 
@@ -38,6 +35,7 @@ const int RED = 2;
 const GLuint ROCK = 3; // GREEN
 const GLuint PAPER = 4;
 const GLuint SCISSORS = 5;
+const int DELETE_COLOR = BLACK;
 
 // Orientation
 const int HORIZONTAL = 0;
@@ -58,7 +56,7 @@ bool newGame;
 int grid[ROWS][COLUMNS];
 bool firstClick;
 int moves;
-int score;
+long int score;
 char status[50];
 // A tile structure, to hold the selected tiles coordinates
 typedef struct Tile {
@@ -92,7 +90,7 @@ void initGrid(){
     for(int i = 0; i < ROWS; i++)
         for(int j = 0; j < COLUMNS; j++)
             // TODO CHANGE TO RANDOM
-            grid[i][j] = (i + j) % COLORS + 1; //BLUE + (rand() % (int)(PAPER - BLUE + 1));
+            grid[i][j] = (i + j) % COLORS + 1; //BLUE + (rand() % (int)(SCISSORS - BLUE + 1));
 }
 
 void initRendering() {
@@ -173,7 +171,7 @@ void drawString (char *s, float x, float y){
 
 void displayStatusBar() {
     glColor3f(1,1,1);
-    sprintf(status, "Moves %d \n Score %d", moves, score);
+    sprintf(status, "Moves %d \t Score %d", moves, score);
     drawString(status, 0.5 , ROWS + 0.5);
 }
 
@@ -228,10 +226,11 @@ bool swapTiles() {
         grid[tile1.row][tile1.col] = grid[tile2.row][tile2.col];
         grid[tile2.row][tile2.col] = buf;
 
-        printGrid();
+        // printGrid();
         return true;
     } else {
         printf("Not valid swap, select another tile\n");
+        return false;
     }
 
 }
@@ -248,14 +247,15 @@ void dropTiles(int dummy) {
     int buf;
     for(int i = 0; i < ROWS; i++) {
         for(int j = 0; j < COLUMNS; j++) {
-            if(grid[i][j] == WHITE) {
+            if(grid[i][j] == DELETE_COLOR) {
                 // If top row then create new tile
                 if(i == 0) {
-                    grid[i][j] = BLUE + (rand() % (int)(PAPER - BLUE + 1));
+                    grid[i][j] = BLUE + (rand() % (int)(SCISSORS - BLUE + 1));
                 } else {
                     buf = grid[i][j];
                     grid[i][j] = grid[i - 1][j];
                     grid[i - 1][j] = buf;
+                    // TODO destroy if stopped falling
                     rerun = true;
                 }
             }
@@ -272,53 +272,95 @@ void dropTiles(int dummy) {
 }
 
 void deleteTriad() {
-    printf("Deleting Triad\n");
+    // printf("Deleting Triad\n");
+    float totalDelay = 1500;
 
     // Blink triad effect
     int oldColor = grid[triad[0][0]][triad[0][1]];
-    recolorTriad(WHITE);
-    glutTimerFunc(250, recolorTriad, oldColor);
-    glutTimerFunc(500, recolorTriad, WHITE);
-    glutTimerFunc(750, recolorTriad, oldColor);
-    glutTimerFunc(1000, recolorTriad, WHITE);
+    recolorTriad(DELETE_COLOR);
+    glutTimerFunc(1.0/5.0 * totalDelay, recolorTriad, oldColor);
+    glutTimerFunc(2.0/5.0 * totalDelay, recolorTriad, DELETE_COLOR);
+    glutTimerFunc(3.0/5.0 * totalDelay, recolorTriad, oldColor);
+    glutTimerFunc(4.0/5.0 * totalDelay, recolorTriad, DELETE_COLOR);
     // glutTimerFunc(1250, recolorTriad, BLACK);
-    glutTimerFunc(1500, dropTiles, NULL);
+    glutTimerFunc(5.0/5.0 * totalDelay, dropTiles, NULL);
 }
 
 // Returns the upper-left and bottom-right tiles of the affected neighborhood
 void getNeighborhood(Tile* region) {
+        //top left coordinates
+        region[0].row = max(triad[0][0] - 3, 0);
+        region[0].col = max(triad[0][1] - 3, 0);
 
-    //top left coordinates
-    region[0].row = max(triad[0][0] - 3, 0);
-    region[0].col = max(triad[0][1] - 3, 0);
-
-    //bottom right coordinates
-    region[1].row = min(triad[2][0] + 3, ROWS);
-    region[1].col = min(triad[2][1] + 3, COLUMNS);
+        //bottom right coordinates
+        region[1].row = min(triad[2][0] + 3, ROWS);
+        region[1].col = min(triad[2][1] + 3, COLUMNS);
 }
 
-void eatSurroundings() {
-    int topLeft[2] = {triad[0][0], triad[0][1]};
+int distFromTriad(int r, int c) {
+    int dx1 = abs(triad[0][0] - r);
+    int dx2 = abs(triad[1][0] - r);
+    int dx3 = abs(triad[2][0] - r);
+    int dx = min(dx1, min(dx2, dx3));
+
+    int dy1 = abs(triad[0][1] - c);
+    int dy2 = abs(triad[1][1] - c);
+    int dy3 = abs(triad[2][1] - c);
+    int dy = min(dy1, min(dy2, dy3));
+
+    return max(dx, dy);
+}
+
+void eatTiles(int eats, int getsEatenBy){
+    int dist;
+
+    Tile hood[2];
+    getNeighborhood(hood);
+
+    // printf("Neighborhood:\n");
+    // printf("UPPER-LEFT %d %d\n", hood[0].row, hood[0].col);
+    // printf("BOTTOM-RIGHT %d %d\n", hood[1].row, hood[1].col);
+
+    int cnt = 0;
+    // TODO eat things in the neighbourghood
+    for(int i = hood[0].row; i <= hood[1].row; i++){
+        for(int j = hood[0].col; j <= hood[1].col; j++) {
+            // regions 2 & 3 (yellow & blue)
+            dist = distFromTriad(i, j);
+            if(dist == 2 || dist == 3)  {
+                // cnt++;
+                if(grid[i][j] == eats) {
+                    grid[i][j] = DELETE_COLOR;
+                    score += 2;
+                } else {
+                    score -= 1;
+                }
+            } else if(dist == 1) { //region 1
+                if(grid[i][j] != getsEatenBy) {
+                    grid[i][j] = DELETE_COLOR;
+                    score += 3;
+                }
+            }
+        }
+    }
+    // printf("CNT %d\n", cnt);
+}
+
+void eatTriadSurroundings() {
     int type = grid[triad[0][0]][triad[0][1]];
 
-    Tile region[2];
-    getNeighborhood(region);
-
-    printf("Neighborhood:\n");
-    printf("UPPER-LEFT %d %d\n", region[0].row, region[0].col);
-    printf("BOTTOM-RIGHT %d %d\n", region[1].row, region[1].col);
-
     if(type == BLUE || type == RED) {
-        printf("BLUE/RED Triad\n");
+        // printf("BLUE/RED Triad\n");
         return;
     } else if(type == ROCK) {
-        printf("ROCK Triad\n");
-        // TODO eat things in the neighbourghood
+        // printf("ROCK Triad\n");
+        eatTiles(SCISSORS, PAPER);
     } else if(type == PAPER) {
-        printf("PAPER Triad\n");
-
+        // printf("PAPER Triad\n");
+        eatTiles(ROCK, SCISSORS);
     } else if(type == SCISSORS) {
-        printf("SCISSORS Triad\n");
+        // printf("SCISSORS Triad\n");
+        eatTiles(PAPER, ROCK);
     }
 }
 
@@ -381,14 +423,16 @@ void checkForTriad() {
     }
 
     if(found) {
-        printf("Found triad %d %d - %d %d - %d %d\n",
-        triad[0][0], triad[0][1],
-        triad[1][0], triad[1][1],
-        triad[2][0], triad[2][1] );
+        // printf("Found triad %d %d - %d %d - %d %d\n",
+        // triad[0][0], triad[0][1],
+        // triad[1][0], triad[1][1],
+        // triad[2][0], triad[2][1] );
 
         score += 10;
-        eatSurroundings();
-        deleteTriad();
+        eatTriadSurroundings();
+        // deleteTriad();
+        recolorTriad(DELETE_COLOR);
+        dropTiles(0);
     }
 }
 
@@ -401,16 +445,17 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
         if(firstClick) {
             if (getTileFromPixel(x, y, &tile1)) {
-                printf("GOT 1ST TILE\n");
+                // printf("GOT 1ST TILE\n");
                 //TODO paint the outline of the tile
                 firstClick = false;
             }
         } else {
             if (getTileFromPixel(x, y, &tile2)) {
-                printf("GOT 2ND TILE\n");
+                // printf("GOT 2ND TILE\n");
                 if(swapTiles()) {
                     checkForTriad();
-                    moves--;
+                    moves -= 1;
+                    printf("MOVES: %d\n",moves);
                     glutPostRedisplay();
                     // display(); // equivalent ?
 
@@ -423,13 +468,18 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
 
 
 void resize(int newWidth, int newHeight) {
-    /*  Reset viewport and projection parameters  */
-    // glViewport (0, 0, newWidth, newHeight);
+    // Keep the window fixed in size
+    glutReshapeWindow( winWidth, winHeight);
+
+    // /*  Reset viewport and projection parameters  */
+    // glViewport (0, 0, newWidth, newWidth);
     // glMatrixMode (GL_PROJECTION);
     // glLoadIdentity();
-    // gluOrtho2D (0.0, COLUMNS, 0.0, ROWS + 1);
+    // gluOrtho2D (0.0, COLUMNS, ROWS + 1, 0);
 
-    /*  Reset display-window size parameters.  */
+    // TILESIZE = newWidth/winWidth * TILESIZE;
+
+    // /*  Reset display-window size parameters.  */
     // winWidth  = newWidth;
     // winHeight = newHeight;
 }
@@ -487,7 +537,7 @@ void readPGM(string filename, GLubyte* texArray) {
 
 void loadTexture(int texName, GLubyte* texture) {
     glBindTexture(GL_TEXTURE_2D, texName);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); // Does not allow color
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); // GL_DECAL or GL_MODULATE
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, TILESIZE, TILESIZE, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, texture);
@@ -510,10 +560,10 @@ void initState() {
     readPGM("assets/scissors.pgm", ICON_SCISSORS);
     loadTexture(SCISSORS, ICON_SCISSORS);
 
-    int score = 0;
+    score = 0;
     printf("Please give number of moves:");
     // scanf("%d", &moves);
-    moves = 100;
+    moves = 66;
 }
 
 int main(int argc,char** argv) {
