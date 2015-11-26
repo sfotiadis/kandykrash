@@ -70,7 +70,6 @@ Tile tile1, tile2;
 int triad[3][2];
 int triadOrientation;
 // Icons
-// GLubyte* ICON_ROCK;
 GLubyte* ICON_ROCK;
 GLubyte* ICON_PAPER;
 GLubyte* ICON_SCISSORS;
@@ -91,8 +90,8 @@ void printGrid(){
 void initGrid(){
     for(int i = 0; i < ROWS; i++)
         for(int j = 0; j < COLUMNS; j++)
-            // TODO CHANGE TO RANDOM
-            grid[i][j] = (i + j) % COLORS + 1; //BLUE + (rand() % (int)(SCISSORS - BLUE + 1));
+            // grid[i][j] = (i + j) % COLORS + 1;
+            grid[i][j] = BLUE + (rand() % (int)(SCISSORS - BLUE + 1));
 }
 
 void initRendering() {
@@ -277,19 +276,15 @@ void eatTileSurroundings(int i, int j) {
     int type = grid[i][j];
 
     int eats;
-    int getsEatenBy;
 
     if(type == BLUE || type == RED) {
         return;
     } else if(type == ROCK) {
         eats = SCISSORS;
-        getsEatenBy = PAPER;
     } else if(type == PAPER) {
         eats = ROCK;
-        getsEatenBy = SCISSORS;
     } else if(type == SCISSORS) {
         eats = PAPER;
-        getsEatenBy = ROCK;
     }
 
     // eat above
@@ -375,14 +370,14 @@ void deleteTriad() {
 }
 
 // Returns the upper-left and bottom-right tiles of the affected neighborhood
-void getNeighborhood(Tile* region) {
+void getNeighborhood(Tile* hood) {
         //top left coordinates
-        region[0].row = max(triad[0][0] - 3, 0);
-        region[0].col = max(triad[0][1] - 3, 0);
+        hood[0].row = max(triad[0][0] - 3, 0);
+        hood[0].col = max(triad[0][1] - 3, 0);
 
         //bottom right coordinates
-        region[1].row = min(triad[2][0] + 3, ROWS);
-        region[1].col = min(triad[2][1] + 3, COLUMNS);
+        hood[1].row = min(triad[2][0] + 3, ROWS - 1);
+        hood[1].col = min(triad[2][1] + 3, COLUMNS - 1);
 }
 
 int distFromTriad(int r, int c) {
@@ -426,7 +421,6 @@ void eatTriadSurroundings() {
     // printf("UPPER-LEFT %d %d\n", hood[0].row, hood[0].col);
     // printf("BOTTOM-RIGHT %d %d\n", hood[1].row, hood[1].col);
 
-    int cnt = 0;
     for(int i = hood[0].row; i <= hood[1].row; i++){
         for(int j = hood[0].col; j <= hood[1].col; j++) {
             // regions 2 & 3 (yellow & blue)
@@ -507,10 +501,10 @@ void checkForTriad() {
     }
 
     if(found) {
-        // printf("Found triad %d %d - %d %d - %d %d\n",
-        // triad[0][0], triad[0][1],
-        // triad[1][0], triad[1][1],
-        // triad[2][0], triad[2][1] );
+        printf("Found triad %d %d - %d %d - %d %d\n",
+        triad[0][0], triad[0][1],
+        triad[1][0], triad[1][1],
+        triad[2][0], triad[2][1] );
 
         score += 10;
         eatTriadSurroundings();
@@ -575,11 +569,13 @@ void keyboard(GLubyte key, GLint xMouse, GLint yMouse)
             if(!gameStarted) {
                 printf("Starting Game\n");
                 gameStarted = true;
+                checkForTriad();
             } else if(moves == 0) {
                 printf("Re-starting Game\n");
                 moves = initialMoves;
                 score = 0;
                 initGrid();
+                checkForTriad();
             }
             glutPostRedisplay();
             break;
@@ -647,20 +643,18 @@ void initState() {
     printf("Please give number of moves:");
     // TODO remove the fixed value
     // scanf("%d", &moves);
-    initialMoves = 2;
+    initialMoves = 20;
     moves = initialMoves;
 }
 
 int main(int argc,char** argv) {
-    initGrid();
-    // TODO Check gia pi8anes triades stin arxi
-
     glutInit(&argc, argv);
     glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowPosition (50, 50);
     glutInitWindowSize (winWidth, winHeight);
     glutCreateWindow ("Kandy Krash");
 
+    initGrid();
     initState();
     initRendering();
 
