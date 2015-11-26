@@ -466,7 +466,6 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
         if(firstClick) {
             if (getTileFromPixel(x, y, &tile1)) {
                 // printf("GOT 1ST TILE\n");
-                //TODO paint the outline of the tile
                 firstClick = false;
                 glutPostRedisplay();
             }
@@ -475,7 +474,6 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
                 // printf("GOT 2ND TILE\n");
                 if(swapTiles()) {
                     checkForTriad();
-                    // TODO restart game
                     moves -= 1;
                     // printf("MOVES: %d\n",moves);
                     glutPostRedisplay();
