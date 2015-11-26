@@ -21,8 +21,8 @@ using namespace std;
 void checkForTriad();
 void deleteTriad();
 
-const int ROWS = 16;
-const int COLUMNS = 16;
+const int ROWS = 12;
+const int COLUMNS = 15;
 const int COLORS = 5;
 int TILESIZE = 40;
 const int PADDING = 0;
@@ -54,10 +54,10 @@ GLsizei winHeight = ROWS * TILESIZE + (ROWS + 1) * PADDING + STATUSLINE;
 
 // State variables
 bool gameStarted;
-bool newGame;
 int grid[ROWS][COLUMNS];
 bool firstClick;
 int moves;
+int initialMoves; // For restarting the game with the same number of moves
 long int score;
 char status[50];
 // A tile structure, to hold the selected tiles coordinates
@@ -174,7 +174,12 @@ void drawString (char *s, float x, float y){
 
 void displayStatusBar() {
     glColor3f(1,1,1);
-    sprintf(status, "Moves %d \t Score %d", moves, score);
+    if(moves > 0) {
+        sprintf(status, "Moves %d \t Score %d", moves, score);
+    } else {
+        sprintf(status, "Final Score %d - Press 'b' to start again", moves, score);
+    }
+
     drawString(status, 0.5 , ROWS + 0.5);
 }
 
@@ -210,7 +215,6 @@ void display() {
     }
     glutSwapBuffers();
 }
-
 
 
 bool isTileWithinBounds(int row, int col) {
@@ -473,7 +477,7 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
                     checkForTriad();
                     // TODO restart game
                     moves -= 1;
-                    printf("MOVES: %d\n",moves);
+                    // printf("MOVES: %d\n",moves);
                     glutPostRedisplay();
                     // display(); // equivalent ?
 
@@ -511,10 +515,16 @@ void keyboard(GLubyte key, GLint xMouse, GLint yMouse)
     switch(key)
     {
         case B_KEY:
-            printf("Starting Game\n");
             if(!gameStarted) {
+                printf("Starting Game\n");
                 gameStarted = true;
-                display();
+                glutPostRedisplay();
+            } else if(moves == 0) {
+                printf("Re-starting Game\n");
+                moves = initialMoves;
+                score = 0;
+                initGrid();
+                glutPostRedisplay();
             }
             break;
         case ESC_KEY:
@@ -564,7 +574,6 @@ void loadTexture(int texName, GLubyte* texture) {
 void initState() {
     firstClick = true;
     gameStarted = false;
-    newGame = false;
 
     ICON_ROCK = new GLubyte[TILESIZE * TILESIZE];
     readPGM("assets/rock.pgm", ICON_ROCK);
@@ -582,7 +591,8 @@ void initState() {
     printf("Please give number of moves:");
     // TODO remove the fixed value
     // scanf("%d", &moves);
-    moves = 66;
+    initialMoves = 1;
+    moves = initialMoves;
 }
 
 int main(int argc,char** argv) {
