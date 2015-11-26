@@ -27,6 +27,7 @@ const int COLORS = 5;
 int TILESIZE = 40;
 const int PADDING = 0;
 const int STATUSLINE = 40;
+const int MARK_THICKNESS = 5;
 
 // Types of tiles
 const int BLACK = 10;
@@ -37,7 +38,7 @@ const GLuint ROCK = 3; // GREEN
 const GLuint PAPER = 4;
 const GLuint SCISSORS = 5;
 const int DELETE_COLOR = BLACK;
-
+const int MARK_COLOR = WHITE;
 // Orientation
 const int HORIZONTAL = 0;
 const int VERTICAL = 1;
@@ -156,10 +157,11 @@ void displayTile(int i, int j) {
 void displayGrid() {
     // glClear (GL_COLOR_BUFFER_BIT);
 
-    for(int i = 0; i < ROWS; i++)
+    for(int i = 0; i < ROWS; i++) {
         for(int j = 0; j < COLUMNS; j++) {
             displayTile(j, i); //
         }
+    }
 }
 
 void drawString (char *s, float x, float y){
@@ -181,6 +183,17 @@ void displayPressKey() {
     drawString("Press 'b' to start", COLUMNS/2 - 2 , ROWS/2);
 }
 
+void markFirstTile() {
+    setTextureFromType(MARK_COLOR);
+    glLineWidth((GLfloat)MARK_THICKNESS);
+    glBegin(GL_LINE_LOOP);
+        glVertex2i(tile1.col, tile1.row);
+        glVertex2i(tile1.col + 1, tile1.row);
+        glVertex2i(tile1.col + 1, tile1.row + 1);
+        glVertex2i(tile1.col, tile1.row + 1);
+    glEnd();
+}
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW); //Switch to the drawing perspective
@@ -188,13 +201,17 @@ void display() {
 
     if(gameStarted) {
         displayGrid();
-        //TODO update score
         displayStatusBar();
+        if(gameStarted && (firstClick == false)) {
+            markFirstTile();
+        }
     } else {
         displayPressKey();
     }
     glutSwapBuffers();
 }
+
+
 
 bool isTileWithinBounds(int row, int col) {
     return (row >=0 && row < ROWS) && (col >=0 && col < COLUMNS);
@@ -202,7 +219,6 @@ bool isTileWithinBounds(int row, int col) {
 
 // Returns true if the tile was correctly returned
 bool getTileFromPixel(int x, int y, Tile* tile) {
-    // TODO Does this need to be fixed with glViewPort?
     tile->row = y / TILESIZE; // Mouse reads from bottom-left
     tile->col = x / TILESIZE; // We are using top-left reference.
     if(isTileWithinBounds(tile->row, tile->col)) {
@@ -323,7 +339,6 @@ void eatTiles(int eats, int getsEatenBy){
     // printf("BOTTOM-RIGHT %d %d\n", hood[1].row, hood[1].col);
 
     int cnt = 0;
-    // TODO eat things in the neighbourghood
     for(int i = hood[0].row; i <= hood[1].row; i++){
         for(int j = hood[0].col; j <= hood[1].col; j++) {
             // regions 2 & 3 (yellow & blue)
@@ -431,9 +446,9 @@ void checkForTriad() {
 
         score += 10;
         eatTriadSurroundings();
-        // deleteTriad();
-        recolorTriad(DELETE_COLOR);
-        dropTiles(0);
+        deleteTriad();
+        // recolorTriad(DELETE_COLOR);
+        // dropTiles(0);§
     }
 }
 
@@ -449,12 +464,14 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
                 // printf("GOT 1ST TILE\n");
                 //TODO paint the outline of the tile
                 firstClick = false;
+                glutPostRedisplay();
             }
         } else {
             if (getTileFromPixel(x, y, &tile2)) {
                 // printf("GOT 2ND TILE\n");
                 if(swapTiles()) {
                     checkForTriad();
+                    // TODO restart game
                     moves -= 1;
                     printf("MOVES: %d\n",moves);
                     glutPostRedisplay();
@@ -563,6 +580,7 @@ void initState() {
 
     score = 0;
     printf("Please give number of moves:");
+    // TODO remove the fixed value
     // scanf("%d", &moves);
     moves = 66;
 }

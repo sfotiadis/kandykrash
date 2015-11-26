@@ -4,7 +4,7 @@ CC = g++
 # CFLAGS = -g
 GCCFLAGS = -w
 
-ifeq ($(OS), mac)
+ifneq ($(OS), mac)
 INCLUDE = -I/usr/include
 LDFLAGS = -L/usr/lib/
 LDLIBS = -lm -framework OpenGL -framework GLUT
