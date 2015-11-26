@@ -505,6 +505,7 @@ void checkForTriad() {
         // triad[0][0], triad[0][1],
         // triad[1][0], triad[1][1],
         // triad[2][0], triad[2][1] );
+        printf("Juicy!\n");
 
         score += 10;
         eatTriadSurroundings();
