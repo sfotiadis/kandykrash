@@ -335,7 +335,7 @@ void dropTiles(int dummy) {
                     grid[i - 1][j] = buf;
                     // When stop falling eat elligible surroundings tiles
                     if(tileStoppedFalling(i, j)) {
-                        eatTileSurroundings(i, j);
+                        // eatTileSurroundings(i, j);
                     }
                     rerun = true;
                 }
@@ -508,7 +508,7 @@ void checkForTriad() {
         printf("Juicy!\n");
 
         score += 10;
-        eatTriadSurroundings();
+        // eatTriadSurroundings();
         deleteTriad();
     }
 }
